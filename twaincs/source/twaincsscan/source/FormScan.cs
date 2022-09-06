@@ -514,9 +514,10 @@ namespace TWAINCSScan
         {
             TWAIN.STS sts;
             TWAIN.TW_IMAGEINFO twimageinfo = default(TWAIN.TW_IMAGEINFO);
-            TWAIN.TW_IMAGEMEMXFER twimagememxfer = default(TWAIN.TW_IMAGEMEMXFER);
+            //TWAIN.TW_IMAGEMEMXFER twimagememxfer = default(TWAIN.TW_IMAGEMEMXFER);
             TWAIN.TW_PENDINGXFERS twpendingxfers = default(TWAIN.TW_PENDINGXFERS);
             TWAIN.TW_USERINTERFACE twuserinterface = default(TWAIN.TW_USERINTERFACE);
+            Bitmap a_bitmap = null;
 
             // Dispatch on the state...
             switch (m_twain.GetState())
@@ -532,11 +533,13 @@ namespace TWAINCSScan
                     SetButtons(EBUTTONSTATE.OPEN);
                     return;
 
-                // Memory transfers...
+                // Memory transfers... ==> Native Transfer
                 case TWAIN.STATE.S6:
                 case TWAIN.STATE.S7:
-                    TWAIN.CsvToImagememxfer(ref twimagememxfer, "0,0,0,0,0,0,0," + ((int)TWAIN.TWMF.APPOWNS | (int)TWAIN.TWMF.POINTER) + "," + m_twsetupmemxfer.Preferred + "," + m_intptrXfer);
-                    sts = m_twain.DatImagememxfer(TWAIN.DG.IMAGE, TWAIN.MSG.GET, ref twimagememxfer);
+                    //TWAIN.CsvToImagememxfer(ref twimagememxfer, "0,0,0,0,0,0,0," + ((int)TWAIN.TWMF.APPOWNS | (int)TWAIN.TWMF.POINTER) + "," + m_twsetupmemxfer.Preferred + "," + m_intptrXfer);
+                    //sts = m_twain.DatImagememxfer(TWAIN.DG.IMAGE, TWAIN.MSG.GET, ref twimagememxfer);
+
+                    sts = m_twain.DatImagenativexfer(TWAIN.DG.IMAGE, TWAIN.MSG.GET, ref a_bitmap);
                     break;
             }
 
@@ -549,6 +552,7 @@ namespace TWAINCSScan
                 return;
             }
 
+            /*
             // Allocate or grow the image memory...
             if (m_intptrImage == IntPtr.Zero)
             {
@@ -571,6 +575,7 @@ namespace TWAINCSScan
             // Copy into the buffer, and bump up our byte tally...
             TWAIN.MemCpy(m_intptrImage + m_iImageBytes, m_intptrXfer, (int)twimagememxfer.BytesWritten);
             m_iImageBytes += (int)twimagememxfer.BytesWritten;
+            */
 
             // If we saw XFERDONE we can save the image, display it,
             // end the transfer, and see if we have more images...
@@ -585,6 +590,7 @@ namespace TWAINCSScan
 
                 // Add the appropriate header...
 
+                /*
                 // Bitonal uncompressed...
                 if (((TWAIN.TWPT)twimageinfo.PixelType == TWAIN.TWPT.BW) && ((TWAIN.TWCP)twimageinfo.Compression == TWAIN.TWCP.NONE))
                 {
@@ -650,6 +656,7 @@ namespace TWAINCSScan
                     SetButtons(EBUTTONSTATE.OPEN);
                     return;
                 }
+                */
 
                 // Save the image to disk, if we're doing that...
                 if (!string.IsNullOrEmpty(m_formsetup.GetImageFolder()))
@@ -668,10 +675,12 @@ namespace TWAINCSScan
                     }
 
                     // Write it out...
-                    string szFilename = Path.Combine(m_formsetup.GetImageFolder(), "img" + string.Format("{0:D6}", m_iImageCount));
-                    TWAIN.WriteImageFile(szFilename, m_intptrImage, m_iImageBytes, out szFilename);
+                    string szFilename = Path.Combine(m_formsetup.GetImageFolder(), "img" + string.Format("{0:D6}.bmp", m_iImageCount));
+                    //TWAIN.WriteImageFile(szFilename, m_intptrImage, m_iImageBytes, out szFilename);
+                    a_bitmap.Save(szFilename);
                 }
 
+                /*
                 // Turn the image into a byte array, and free the original memory...
                 byte[] abImage = new byte[m_iImageBytes];
                 Marshal.Copy(m_intptrImage, abImage, 0, m_iImageBytes);
@@ -682,6 +691,9 @@ namespace TWAINCSScan
                 // Turn the byte array into a stream...
                 MemoryStream memorystream = new MemoryStream(abImage);
                 Bitmap bitmap = (Bitmap)Image.FromStream(memorystream);
+                */
+                m_iImageBytes = m_iImageBytes / 100; //prevents error
+                Bitmap bitmap = a_bitmap;
 
                 // Display the image...
                 if (m_iUseBitmap == 0)
@@ -696,9 +708,11 @@ namespace TWAINCSScan
                 }
 
                 // Cleanup...
+                /*
                 bitmap.Dispose();
                 memorystream = null; // disposed by the bitmap
                 abImage = null;
+                */
 
                 // TwainCall.CALL_EjectNumbering_MSG_SET((checkBox1.Checked ? 1 : 0), "AB-DEFGHIJKL1 345");
                 TWAIN.TW_EJECTNUMBERING twejectnumbering = default(TWAIN.TW_EJECTNUMBERING);
