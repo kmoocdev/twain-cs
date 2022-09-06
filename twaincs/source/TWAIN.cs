@@ -51,6 +51,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Threading;
+using static TWAINWorkingGroup.TWAIN;
 
 namespace TWAINWorkingGroup
 {
@@ -2750,6 +2751,65 @@ namespace TWAINWorkingGroup
                 a_twfilesystem.NumberOfFiles = (uint)UInt64.Parse(asz[10]);
                 a_twfilesystem.NumberOfSnippets = (uint)UInt64.Parse(asz[11]);
                 a_twfilesystem.DeviceGroupMask = (uint)UInt64.Parse(asz[12]);
+            }
+            catch (Exception exception)
+            {
+                Log.Error("***error*** - " + exception.Message);
+                return (false);
+            }
+
+            // All done...
+            return (true);
+        }
+
+        /// <summary>
+        /// Convert the contents of a string to a filesystem structure...
+        /// </summary>
+        /// <param name="a_twnouiparamfile">A TWAIN structure</param>
+        /// <param name="a_szNoUIParamFile">A CSV string of the TWAIN structure</param>
+        /// <returns>True if the conversion is successful</returns>
+        public bool CsvToNoUIParamFile(ref TW_NOUIPARAMFILE a_twnouiparamfile, string a_szNoUIParamFile)
+        {
+            // Init stuff...
+            a_twnouiparamfile = default(TW_NOUIPARAMFILE);
+
+            // Build the string...
+            try
+            {
+                string[] asz = CSV.Parse(a_szNoUIParamFile);
+
+                // Grab the values...
+                a_twnouiparamfile.NoUIParmFile.Set(asz[0]);
+            }
+            catch (Exception exception)
+            {
+                Log.Error("***error*** - " + exception.Message);
+                return (false);
+            }
+
+            // All done...
+            return (true);
+        }
+
+        /// <summary>
+        /// Convert the contents of a string to a filesystem structure...
+        /// </summary>
+        /// <param name="a_twejectnumbering">A TWAIN structure</param>
+        /// <param name="a_szEjectNumbering">A CSV string of the TWAIN structure</param>
+        /// <returns>True if the conversion is successful</returns>
+        public bool CsvToEjectNumbering(ref TW_EJECTNUMBERING a_twejectnumbering, string a_szEjectNumbering)
+        {
+            // Init stuff...
+            a_twejectnumbering = default(TW_EJECTNUMBERING);
+
+            // Build the string...
+            try
+            {
+                string[] asz = CSV.Parse(a_szEjectNumbering);
+
+                // Grab the values...
+                a_twejectnumbering.NumberingFlg = ushort.Parse(asz[0]);
+                a_twejectnumbering.NumberingChar.Set(asz[1]);
             }
             catch (Exception exception)
             {
@@ -5935,6 +5995,441 @@ namespace TWAINWorkingGroup
                     else
                     {
                         sts = (STS)NativeMethods.MacosxTwaindsmDsmEntryCiecolor(ref m_twidentitymacosxApp, ref m_twidentitymacosxDs, a_dg, DAT.CIECOLOR, a_msg, ref a_twciecolor);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Uh-oh...
+            else
+            {
+                Log.LogSendAfter(STS.BUMMER, "");
+                return (STS.BUMMER);
+            }
+
+            // Get DAT_STATUS, if needed...
+            TWAIN.STS stsRcOrCc = AutoDatStatus(sts);
+
+            // Log it...
+            if (Log.GetLevel() > 0)
+            {
+                Log.LogSendAfter(stsRcOrCc, "");
+            }
+
+            // All done...
+            return (stsRcOrCc);
+        }
+
+        /// <summary>
+        /// Get/Set for NOUIPARAMFILE...
+        /// </summary>
+        /// <param name="a_dg">Data group</param>
+        /// <param name="a_msg">Operation</param>
+        /// <param name="a_twnouiparamfile">NOUIPARAMFILE structure</param>
+        /// <returns>TWAIN status</returns>
+        public STS DatNoUIParamFile(DG a_dg, MSG a_msg, ref TW_NOUIPARAMFILE a_twnouiparamfile)
+        {
+            STS sts;
+
+            // Submit the work to the TWAIN thread...
+            if ((m_threadTwain != null) && (m_threadTwain.ManagedThreadId != Thread.CurrentThread.ManagedThreadId))
+            {
+                lock (m_lockTwain)
+                {
+                    // Set our command variables...
+                    ThreadData threaddata = default(ThreadData);
+                    threaddata.twnouiparamfile = a_twnouiparamfile;
+                    threaddata.dg = a_dg;
+                    threaddata.msg = a_msg;
+                    threaddata.dat = DAT.NOUIPARAMFILE;
+                    long lIndex = m_twaincommand.Submit(threaddata);
+
+                    // Submit the command and wait for the reply...
+                    CallerToThreadSet();
+                    ThreadToCallerWaitOne();
+
+                    // Return the result...
+                    a_twnouiparamfile = m_twaincommand.Get(lIndex).twnouiparamfile;
+                    sts = m_twaincommand.Get(lIndex).sts;
+
+                    // Clear the command variables...
+                    m_twaincommand.Delete(lIndex);
+                }
+                return (sts);
+            }
+
+            // Log it...
+            if (Log.GetLevel() > 0)
+            {
+                Log.LogSendBefore(a_dg.ToString(), DAT.NOUIPARAMFILE.ToString(), a_msg.ToString(), "");
+            }
+
+            // Windows...
+            if (ms_platform == Platform.WINDOWS)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blUseLegacyDSM)
+                    {
+                        sts = (STS)NativeMethods.WindowsTwain32DsmEntryNoUIParamFile(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.NOUIPARAMFILE, a_msg, ref a_twnouiparamfile);
+                    }
+                    else
+                    {
+                        sts = (STS)NativeMethods.WindowsTwaindsmDsmEntryNoUIParamFile(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.NOUIPARAMFILE, a_msg, ref a_twnouiparamfile);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Linux...
+            else if (ms_platform == Platform.LINUX)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blFoundLatestDsm64 && (m_linuxdsm == LinuxDsm.IsLatestDsm))
+                    {
+                        sts = (STS)NativeMethods.Linux64DsmEntryNoUIParamFile(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.NOUIPARAMFILE, a_msg, ref a_twnouiparamfile);
+                    }
+                    else if (m_blFoundLatestDsm && (m_linuxdsm == LinuxDsm.IsLatestDsm))
+                    {
+                        sts = (STS)NativeMethods.LinuxDsmEntryNoUIParamFile(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.NOUIPARAMFILE, a_msg, ref a_twnouiparamfile);
+                    }
+                    else if (m_blFound020302Dsm64bit && (m_linuxdsm == LinuxDsm.Is020302Dsm64bit))
+                    {
+                        sts = (STS)NativeMethods.Linux020302Dsm64bitEntryNoUIParamFile(ref m_twidentityApp, ref m_twidentityDs, a_dg, DAT.NOUIPARAMFILE, a_msg, ref a_twnouiparamfile);
+                    }
+                    else
+                    {
+                        Log.Error("apparently we don't have a DSM...");
+                        sts = STS.BUMMER;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Mac OS X, which has to be different...
+            else if (ms_platform == Platform.MACOSX)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blUseLegacyDSM)
+                    {
+                        sts = (STS)NativeMethods.MacosxTwainDsmEntryNoUIParamFile(ref m_twidentitymacosxApp, ref m_twidentitymacosxDs, a_dg, DAT.NOUIPARAMFILE, a_msg, ref a_twnouiparamfile);
+                    }
+                    else
+                    {
+                        sts = (STS)NativeMethods.MacosxTwaindsmDsmEntryNoUIParamFile(ref m_twidentitymacosxApp, ref m_twidentitymacosxDs, a_dg, DAT.NOUIPARAMFILE, a_msg, ref a_twnouiparamfile);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Uh-oh...
+            else
+            {
+                Log.LogSendAfter(STS.BUMMER, "");
+                return (STS.BUMMER);
+            }
+
+            // Get DAT_STATUS, if needed...
+            TWAIN.STS stsRcOrCc = AutoDatStatus(sts);
+
+            // Log it...
+            if (Log.GetLevel() > 0)
+            {
+                Log.LogSendAfter(stsRcOrCc, "");
+            }
+
+            // All done...
+            return (stsRcOrCc);
+        }
+
+        /// <summary>
+        /// Get/Set for general TW_UNIT16, TW_BOOL...
+        /// </summary>
+        /// <param name="a_dg">Data group</param>
+        /// <param name="a_msg">Operation</param>
+        /// <param name="a_twtripletuint16">NOUIPARAMFILE structure</param>
+        /// <returns>TWAIN status</returns>
+        public STS DatTripletUint16(DG a_dg, DAT a_dat, MSG a_msg, ref ushort a_twtripletuint16)
+        {
+            STS sts;
+
+            // Submit the work to the TWAIN thread...
+            if ((m_threadTwain != null) && (m_threadTwain.ManagedThreadId != Thread.CurrentThread.ManagedThreadId))
+            {
+                lock (m_lockTwain)
+                {
+                    // Set our command variables...
+                    ThreadData threaddata = default(ThreadData);
+                    threaddata.twtripletuint16 = a_twtripletuint16;
+                    threaddata.dg = a_dg;
+                    threaddata.msg = a_msg;
+                    threaddata.dat = a_dat;
+                    long lIndex = m_twaincommand.Submit(threaddata);
+
+                    // Submit the command and wait for the reply...
+                    CallerToThreadSet();
+                    ThreadToCallerWaitOne();
+
+                    // Return the result...
+                    a_twtripletuint16 = m_twaincommand.Get(lIndex).twtripletuint16;
+                    sts = m_twaincommand.Get(lIndex).sts;
+
+                    // Clear the command variables...
+                    m_twaincommand.Delete(lIndex);
+                }
+                return (sts);
+            }
+
+            // Log it...
+            if (Log.GetLevel() > 0)
+            {
+                Log.LogSendBefore(a_dg.ToString(), a_dat.ToString(), a_msg.ToString(), "");
+            }
+
+            // Windows...
+            if (ms_platform == Platform.WINDOWS)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blUseLegacyDSM)
+                    {
+                        sts = (STS)NativeMethods.WindowsTwain32DsmEntryTripletUint16(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, a_dat, a_msg, ref a_twtripletuint16);
+                    }
+                    else
+                    {
+                        sts = (STS)NativeMethods.WindowsTwaindsmDsmEntryTripletUint16(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, a_dat, a_msg, ref a_twtripletuint16);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Linux...
+            else if (ms_platform == Platform.LINUX)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blFoundLatestDsm64 && (m_linuxdsm == LinuxDsm.IsLatestDsm))
+                    {
+                        sts = (STS)NativeMethods.Linux64DsmEntryTripletUint16(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, a_dat, a_msg, ref a_twtripletuint16);
+                    }
+                    else if (m_blFoundLatestDsm && (m_linuxdsm == LinuxDsm.IsLatestDsm))
+                    {
+                        sts = (STS)NativeMethods.LinuxDsmEntryTripletUint16(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, a_dat, a_msg, ref a_twtripletuint16);
+                    }
+                    else if (m_blFound020302Dsm64bit && (m_linuxdsm == LinuxDsm.Is020302Dsm64bit))
+                    {
+                        sts = (STS)NativeMethods.Linux020302Dsm64bitEntryTripletUint16(ref m_twidentityApp, ref m_twidentityDs, a_dg, a_dat, a_msg, ref a_twtripletuint16);
+                    }
+                    else
+                    {
+                        Log.Error("apparently we don't have a DSM...");
+                        sts = STS.BUMMER;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Mac OS X, which has to be different...
+            else if (ms_platform == Platform.MACOSX)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blUseLegacyDSM)
+                    {
+                        sts = (STS)NativeMethods.MacosxTwainDsmEntryTripletUint16(ref m_twidentitymacosxApp, ref m_twidentitymacosxDs, a_dg, a_dat, a_msg, ref a_twtripletuint16);
+                    }
+                    else
+                    {
+                        sts = (STS)NativeMethods.MacosxTwaindsmDsmEntryTripletUint16(ref m_twidentitymacosxApp, ref m_twidentitymacosxDs, a_dg, a_dat, a_msg, ref a_twtripletuint16);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Uh-oh...
+            else
+            {
+                Log.LogSendAfter(STS.BUMMER, "");
+                return (STS.BUMMER);
+            }
+
+            // Get DAT_STATUS, if needed...
+            TWAIN.STS stsRcOrCc = AutoDatStatus(sts);
+
+            // Log it...
+            if (Log.GetLevel() > 0)
+            {
+                Log.LogSendAfter(stsRcOrCc, "");
+            }
+
+            // All done...
+            return (stsRcOrCc);
+        }
+
+        /// <summary>
+        /// Get/Set for EjectNumbering...
+        /// </summary>
+        /// <param name="a_dg">Data group</param>
+        /// <param name="a_msg">Operation</param>
+        /// <param name="a_twejectnumbering">EJECTNUMBERING structure</param>
+        /// <returns>TWAIN status</returns>
+        public STS DatEjectNumbering(DG a_dg, MSG a_msg, ref TW_EJECTNUMBERING a_twejectnumbering)
+        {
+            STS sts;
+
+            // Submit the work to the TWAIN thread...
+            if ((m_threadTwain != null) && (m_threadTwain.ManagedThreadId != Thread.CurrentThread.ManagedThreadId))
+            {
+                lock (m_lockTwain)
+                {
+                    // Set our command variables...
+                    ThreadData threaddata = default(ThreadData);
+                    threaddata.twejectnumbering = a_twejectnumbering;
+                    threaddata.dg = a_dg;
+                    threaddata.msg = a_msg;
+                    threaddata.dat = DAT.EJECTNUMBERING;
+                    long lIndex = m_twaincommand.Submit(threaddata);
+
+                    // Submit the command and wait for the reply...
+                    CallerToThreadSet();
+                    ThreadToCallerWaitOne();
+
+                    // Return the result...
+                    a_twejectnumbering = m_twaincommand.Get(lIndex).twejectnumbering;
+                    sts = m_twaincommand.Get(lIndex).sts;
+
+                    // Clear the command variables...
+                    m_twaincommand.Delete(lIndex);
+                }
+                return (sts);
+            }
+
+            // Log it...
+            if (Log.GetLevel() > 0)
+            {
+                Log.LogSendBefore(a_dg.ToString(), DAT.EJECTNUMBERING.ToString(), a_msg.ToString(), "");
+            }
+
+            // Windows...
+            if (ms_platform == Platform.WINDOWS)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blUseLegacyDSM)
+                    {
+                        sts = (STS)NativeMethods.WindowsTwain32DsmEntryEjectNumbering(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.EJECTNUMBERING, a_msg, ref a_twejectnumbering);
+                    }
+                    else
+                    {
+                        sts = (STS)NativeMethods.WindowsTwaindsmDsmEntryEjectNumbering(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.EJECTNUMBERING, a_msg, ref a_twejectnumbering);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Linux...
+            else if (ms_platform == Platform.LINUX)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blFoundLatestDsm64 && (m_linuxdsm == LinuxDsm.IsLatestDsm))
+                    {
+                        sts = (STS)NativeMethods.Linux64DsmEntryEjectNumbering(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.EJECTNUMBERING, a_msg, ref a_twejectnumbering);
+                    }
+                    else if (m_blFoundLatestDsm && (m_linuxdsm == LinuxDsm.IsLatestDsm))
+                    {
+                        sts = (STS)NativeMethods.LinuxDsmEntryEjectNumbering(ref m_twidentitylegacyApp, ref m_twidentitylegacyDs, a_dg, DAT.EJECTNUMBERING, a_msg, ref a_twejectnumbering);
+                    }
+                    else if (m_blFound020302Dsm64bit && (m_linuxdsm == LinuxDsm.Is020302Dsm64bit))
+                    {
+                        sts = (STS)NativeMethods.Linux020302Dsm64bitEntryEjectNumbering(ref m_twidentityApp, ref m_twidentityDs, a_dg, DAT.EJECTNUMBERING, a_msg, ref a_twejectnumbering);
+                    }
+                    else
+                    {
+                        Log.Error("apparently we don't have a DSM...");
+                        sts = STS.BUMMER;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    // The driver crashed...
+                    Log.Error("crash - " + exception.Message);
+                    Log.LogSendAfter(STS.BUMMER, "");
+                    return (STS.BUMMER);
+                }
+            }
+
+            // Mac OS X, which has to be different...
+            else if (ms_platform == Platform.MACOSX)
+            {
+                // Issue the command...
+                try
+                {
+                    if (m_blUseLegacyDSM)
+                    {
+                        sts = (STS)NativeMethods.MacosxTwainDsmEntryEjectNumbering(ref m_twidentitymacosxApp, ref m_twidentitymacosxDs, a_dg, DAT.EJECTNUMBERING, a_msg, ref a_twejectnumbering);
+                    }
+                    else
+                    {
+                        sts = (STS)NativeMethods.MacosxTwaindsmDsmEntryEjectNumbering(ref m_twidentitymacosxApp, ref m_twidentitymacosxDs, a_dg, DAT.EJECTNUMBERING, a_msg, ref a_twejectnumbering);
                     }
                 }
                 catch (Exception exception)
@@ -12585,6 +13080,22 @@ namespace TWAINWorkingGroup
                         threaddata.sts = DatCiecolor(threaddata.dg, threaddata.msg, ref threaddata.twciecolor);
                         break;
 
+                    // NoUIParamFile...
+                    case DAT.NOUIPARAMFILE:
+                        threaddata.sts = DatNoUIParamFile(threaddata.dg, threaddata.msg, ref threaddata.twnouiparamfile);
+                        break;
+
+                    // DivSCANCTL...
+                    case DAT.DIVSCANCTL:
+                    case DAT.EJECTCTL:
+                        threaddata.sts = DatTripletUint16(threaddata.dg, threaddata.dat, threaddata.msg, ref threaddata.twtripletuint16);
+                        break;
+
+                    // EjectNumbering...
+                    case DAT.EJECTNUMBERING:
+                        threaddata.sts = DatEjectNumbering(threaddata.dg, threaddata.msg, ref threaddata.twejectnumbering);
+                        break;
+
                     // Snapshots...
                     case DAT.CUSTOMDSDATA:
                         threaddata.sts = DatCustomdsdata(threaddata.dg, threaddata.msg, ref threaddata.twcustomdsdata);
@@ -14356,6 +14867,9 @@ namespace TWAINWorkingGroup
             public TW_CALLBACK2 twcallback2;
             public TW_CAPABILITY twcapability;
             public TW_CIECOLOR twciecolor;
+            public TW_NOUIPARAMFILE twnouiparamfile;
+            public TW_EJECTNUMBERING twejectnumbering;
+            public ushort twtripletuint16;
             public TW_CUSTOMDSDATA twcustomdsdata;
             public TW_DEVICEEVENT twdeviceevent;
             public TW_ENTRYPOINT twentrypoint;
