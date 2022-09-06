@@ -835,6 +835,31 @@ namespace TWAINCSScan
             //    szTwmemref = "TRUE,FALSE," + this.Handle;
             //}
 
+            string szStatus;
+            TWAIN.TW_CAPABILITY twcapability;
+
+            // Open it...
+            if (m_ScanOpenMode == false)  //에러 발생으로 인한 Rollback 시 CLOSEDS된 연결 리셋
+            {
+                TWAIN.TW_IDENTITY twidentity = default(TWAIN.TW_IDENTITY);
+
+                // Get the default driver...
+                sts = m_twain.DatIdentity(TWAIN.DG.CONTROL, TWAIN.MSG.GETDEFAULT, ref twidentity);
+                if (sts != TWAIN.STS.SUCCESS)
+                {
+                    MessageBox.Show("Unable to open scanner (it is turned on and plugged in?)");
+                    return;
+                }
+
+                sts = m_twain.DatIdentity(TWAIN.DG.CONTROL, TWAIN.MSG.OPENDS, ref twidentity);
+                if (sts != TWAIN.STS.SUCCESS)
+                {
+                    MessageBox.Show("Unable to open scanner (it is turned on and plugged in?)");
+                    return;
+                }
+                m_ScanOpenMode = true;
+            }
+
             TWAIN.TW_NOUIPARAMFILE twnouiparamfile = default(TWAIN.TW_NOUIPARAMFILE);
             m_twain.CsvToNoUIParamFile(ref twnouiparamfile, "HT4139_setting");
             sts = m_twain.DatNoUIParamFile(TWAIN.DG.CONTROL, TWAIN.MSG.RESET, ref twnouiparamfile);
@@ -842,8 +867,27 @@ namespace TWAINCSScan
             ushort twdivscanctl = 1;
             sts = m_twain.DatTripletUint16(TWAIN.DG.CONTROL, TWAIN.DAT.DIVSCANCTL, TWAIN.MSG.SET, ref twdivscanctl);
 
-            string szStatus;
-            TWAIN.TW_CAPABILITY twcapability;
+            // We're doing memory transfers...  ==> Native transfer
+            szStatus = "";
+            twcapability = default(TWAIN.TW_CAPABILITY);
+            m_twain.CsvToCapability(ref twcapability, ref szStatus, "ICAP_XFERMECH,TWON_ONEVALUE,TWTY_UINT16,TWSX_NATIVE");
+            sts = m_twain.DatCapability(TWAIN.DG.CONTROL, TWAIN.MSG.SET, ref twcapability);
+            if (sts != TWAIN.STS.SUCCESS)
+            {
+                m_blExit = true;
+                return;
+            }
+
+            // Decide whether or not to show the driver's window messages...
+            szStatus = "";
+            twcapability = default(TWAIN.TW_CAPABILITY);
+            m_twain.CsvToCapability(ref twcapability, ref szStatus, "CAP_INDICATORS,TWON_ONEVALUE,TWTY_BOOL," + (m_blIndicators ? "TRUE" : "FALSE"));
+            sts = m_twain.DatCapability(TWAIN.DG.CONTROL, TWAIN.MSG.SET, ref twcapability);
+            if (sts != TWAIN.STS.SUCCESS)
+            {
+                m_blExit = true;
+                return;
+            }
 
             szStatus = "";
             twcapability = default(TWAIN.TW_CAPABILITY);
@@ -873,6 +917,15 @@ namespace TWAINCSScan
             if (sts == TWAIN.STS.SUCCESS)
             {
                 SetButtons(EBUTTONSTATE.SCANNING);
+            }
+            else if ((int)sts == 102400)  //용지없음 :에러코드 102400
+            {
+                MessageBox.Show("용지투입...");
+            }
+            else if (sts != TWAIN.STS.SUCCESS)  //오류 발생 시
+            {
+                Rollback(TWAIN.STATE.S3);
+                m_ScanOpenMode = false;
             }
         }
 
@@ -1107,6 +1160,7 @@ namespace TWAINCSScan
                 m_blExit = true;
                 return;
             }
+            m_ScanOpenMode = true;
 
             // Update the main form title...
             this.Text = "TWAIN C# Scan (" + twidentity.ProductName.Get() + ")";
@@ -1248,6 +1302,8 @@ namespace TWAINCSScan
         private Rectangle m_rectangleBackground;
         private int m_iUseBitmap;
         private int m_iImageCount = 0;
+
+        private bool m_ScanOpenMode = false;
 
         /// <summary>
         /// We use this to run code in the context of the caller's UI thread...
