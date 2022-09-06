@@ -2524,6 +2524,25 @@ namespace TWAINWorkingGroup
             public IntPtr hParent;
         }
 
+        /// <summary>
+        /// HT scanner custom structure
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 2, CharSet = CharSet.Ansi)]
+        public struct TW_NOUIPARAMFILE
+        {
+            public TW_STR128 NoUIParmFile;
+        }
+
+        /// <summary>
+        /// HT scanner custom structure
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 2, CharSet = CharSet.Ansi)]
+        public struct TW_EJECTNUMBERING
+        {
+            public ushort NumberingFlg;
+            public TW_STR128 NumberingChar;
+        }
+
         #endregion
 
 
@@ -3855,7 +3874,13 @@ namespace TWAINWorkingGroup
             /* misplaced */
             ICCPROFILE = 0x401,
             IMAGEMEMFILEXFER = 0x402,
-            ENTRYPOINT = 0x403
+            ENTRYPOINT = 0x403,
+
+            /* HT custom */
+            NOUIPARAMFILE = 0x8001,
+            DIVSCANCTL = 0x8002,
+            EJECTCTL = 0x8003,
+            EJECTNUMBERING = 0x8004
         }
 
         #endregion
@@ -7142,6 +7167,270 @@ namespace TWAINWorkingGroup
             TWAIN.DAT dat,
             TWAIN.MSG msg,
             ref TWAIN.TW_CIECOLOR twciecolor
+        );
+
+        /// <summary>
+        /// Use this for DG_CONTROL / DAT.NOUIPARAMFILE / MSG.* calls...
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="dest"></param>
+        /// <param name="dg"></param>
+        /// <param name="dat"></param>
+        /// <param name="msg"></param>
+        /// <param name="twnouiparamfile"></param>
+        /// <returns></returns>
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("twain_32.dll", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 WindowsTwain32DsmEntryNoUIParamFile
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_NOUIPARAMFILE twnouiparamfile
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("twaindsm.dll", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 WindowsTwaindsmDsmEntryNoUIParamFile
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_NOUIPARAMFILE twnouiparamfile
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib/libtwaindsm.so", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 LinuxDsmEntryNoUIParamFile
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_NOUIPARAMFILE twnouiparamfile
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib64/libtwaindsm.so", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 Linux64DsmEntryNoUIParamFile
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_NOUIPARAMFILE twnouiparamfile
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib/libtwaindsm.so.2.3.2", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 Linux020302Dsm64bitEntryNoUIParamFile
+        (
+            ref TWAIN.TW_IDENTITY origin,
+            ref TWAIN.TW_IDENTITY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_NOUIPARAMFILE twnouiparamfile
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/System/Library/Frameworks/TWAIN.framework/TWAIN", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 MacosxTwainDsmEntryNoUIParamFile
+        (
+            ref TWAIN.TW_IDENTITY_MACOSX origin,
+            ref TWAIN.TW_IDENTITY_MACOSX dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_NOUIPARAMFILE twnouiparamfile
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/Library/Frameworks/TWAINDSM.framework/TWAINDSM", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 MacosxTwaindsmDsmEntryNoUIParamFile
+        (
+            ref TWAIN.TW_IDENTITY_MACOSX origin,
+            ref TWAIN.TW_IDENTITY_MACOSX dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_NOUIPARAMFILE twnouiparamfile
+        );
+
+        /// <summary>
+        /// Use this for DG_* / DAT.* / MSG.* calls...
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="dest"></param>
+        /// <param name="dg"></param>
+        /// <param name="dat"></param>
+        /// <param name="msg"></param>
+        /// <param name="twtripletuint16"></param>
+        /// <returns></returns>
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("twain_32.dll", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 WindowsTwain32DsmEntryTripletUint16
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref ushort twtripletuint16
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("twaindsm.dll", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 WindowsTwaindsmDsmEntryTripletUint16
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref ushort twtripletuint16
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib/libtwaindsm.so", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 LinuxDsmEntryTripletUint16
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref ushort twtripletuint16
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib64/libtwaindsm.so", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 Linux64DsmEntryTripletUint16
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref ushort twtripletuint16
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib/libtwaindsm.so.2.3.2", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 Linux020302Dsm64bitEntryTripletUint16
+        (
+            ref TWAIN.TW_IDENTITY origin,
+            ref TWAIN.TW_IDENTITY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref ushort twtripletuint16
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/System/Library/Frameworks/TWAIN.framework/TWAIN", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 MacosxTwainDsmEntryTripletUint16
+        (
+            ref TWAIN.TW_IDENTITY_MACOSX origin,
+            ref TWAIN.TW_IDENTITY_MACOSX dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref ushort twtripletuint16
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/Library/Frameworks/TWAINDSM.framework/TWAINDSM", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 MacosxTwaindsmDsmEntryTripletUint16
+        (
+            ref TWAIN.TW_IDENTITY_MACOSX origin,
+            ref TWAIN.TW_IDENTITY_MACOSX dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref ushort twtripletuint16
+        );
+
+        /// <summary>
+        /// Use this for DG_CONTROL / DAT.EJECTNUMBERING / MSG.* calls...
+        /// </summary>
+        /// <param name="origin"></param>
+        /// <param name="dest"></param>
+        /// <param name="dg"></param>
+        /// <param name="dat"></param>
+        /// <param name="msg"></param>
+        /// <param name="twejectnumbering"></param>
+        /// <returns></returns>
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("twain_32.dll", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 WindowsTwain32DsmEntryEjectNumbering
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_EJECTNUMBERING twejectnumbering
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("twaindsm.dll", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 WindowsTwaindsmDsmEntryEjectNumbering
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_EJECTNUMBERING twejectnumbering
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib/libtwaindsm.so", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 LinuxDsmEntryEjectNumbering
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_EJECTNUMBERING twejectnumbering
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib64/libtwaindsm.so", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 Linux64DsmEntryEjectNumbering
+        (
+            ref TWAIN.TW_IDENTITY_LEGACY origin,
+            ref TWAIN.TW_IDENTITY_LEGACY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_EJECTNUMBERING twejectnumbering
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/usr/local/lib/libtwaindsm.so.2.3.2", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 Linux020302Dsm64bitEntryEjectNumbering
+        (
+            ref TWAIN.TW_IDENTITY origin,
+            ref TWAIN.TW_IDENTITY dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_EJECTNUMBERING twejectnumbering
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/System/Library/Frameworks/TWAIN.framework/TWAIN", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 MacosxTwainDsmEntryEjectNumbering
+        (
+            ref TWAIN.TW_IDENTITY_MACOSX origin,
+            ref TWAIN.TW_IDENTITY_MACOSX dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_EJECTNUMBERING twejectnumbering
+        );
+        [SuppressMessage("Microsoft.Interoperability", "CA1400:PInvokeEntryPointsShouldExist")]
+        [DllImport("/Library/Frameworks/TWAINDSM.framework/TWAINDSM", EntryPoint = "DSM_Entry", CharSet = CharSet.Ansi)]
+        internal static extern UInt16 MacosxTwaindsmDsmEntryEjectNumbering
+        (
+            ref TWAIN.TW_IDENTITY_MACOSX origin,
+            ref TWAIN.TW_IDENTITY_MACOSX dest,
+            TWAIN.DG dg,
+            TWAIN.DAT dat,
+            TWAIN.MSG msg,
+            ref TWAIN.TW_EJECTNUMBERING twejectnumbering
         );
 
         /// <summary>
