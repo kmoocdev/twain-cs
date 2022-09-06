@@ -700,6 +700,16 @@ namespace TWAINCSScan
                 memorystream = null; // disposed by the bitmap
                 abImage = null;
 
+                // TwainCall.CALL_EjectNumbering_MSG_SET((checkBox1.Checked ? 1 : 0), "AB-DEFGHIJKL1 345");
+                TWAIN.TW_EJECTNUMBERING twejectnumbering = default(TWAIN.TW_EJECTNUMBERING);
+                m_twain.CsvToEjectNumbering(ref twejectnumbering, "1,0123456789ABCDEF");
+                sts = m_twain.DatEjectNumbering(TWAIN.DG.CONTROL, TWAIN.MSG.SET, ref twejectnumbering);
+                // TwainCall.CALL_EjectCtl_MSG_SET(0);
+                ushort ejectinstruct = 1;
+                sts = m_twain.DatTripletUint16(TWAIN.DG.CONTROL, TWAIN.DAT.EJECTCTL, TWAIN.MSG.SET, ref ejectinstruct);
+                // TwainCall.CALL_Set_Ejection();
+                // DoNativeTransfer2
+
                 // End the transfer...
                 m_twain.DatPendingxfers(TWAIN.DG.CONTROL, TWAIN.MSG.ENDXFER, ref twpendingxfers);
 
@@ -815,13 +825,44 @@ namespace TWAINCSScan
 
             // Silently start scanning if we detect that customdsdata is supported,
             // otherwise bring up the driver GUI so the user can change settings...
-            if (m_formsetup.IsCustomDsDataSupported())
+            //if (m_formsetup.IsCustomDsDataSupported())
+            if (true)
             {
                 szTwmemref = "FALSE,FALSE," + this.Handle;
             }
-            else
+            //else
+            //{
+            //    szTwmemref = "TRUE,FALSE," + this.Handle;
+            //}
+
+            TWAIN.TW_NOUIPARAMFILE twnouiparamfile = default(TWAIN.TW_NOUIPARAMFILE);
+            m_twain.CsvToNoUIParamFile(ref twnouiparamfile, "HT4139_setting");
+            sts = m_twain.DatNoUIParamFile(TWAIN.DG.CONTROL, TWAIN.MSG.RESET, ref twnouiparamfile);
+
+            ushort twdivscanctl = 1;
+            sts = m_twain.DatTripletUint16(TWAIN.DG.CONTROL, TWAIN.DAT.DIVSCANCTL, TWAIN.MSG.SET, ref twdivscanctl);
+
+            string szStatus;
+            TWAIN.TW_CAPABILITY twcapability;
+
+            szStatus = "";
+            twcapability = default(TWAIN.TW_CAPABILITY);
+            m_twain.CsvToCapability(ref twcapability, ref szStatus, "CAP_AUTOFEED,TWON_ONEVALUE,TWTY_BOOL,TRUE");
+            sts = m_twain.DatCapability(TWAIN.DG.CONTROL, TWAIN.MSG.SET, ref twcapability);
+            if (sts != TWAIN.STS.SUCCESS)
             {
-                szTwmemref = "TRUE,FALSE," + this.Handle;
+                // error
+                return;
+            }
+
+            szStatus = "";
+            twcapability = default(TWAIN.TW_CAPABILITY);
+            m_twain.CsvToCapability(ref twcapability, ref szStatus, "CAP_DUPLEXENABLED,TWON_ONEVALUE,TWTY_BOOL,FALSE");
+            sts = m_twain.DatCapability(TWAIN.DG.CONTROL, TWAIN.MSG.SET, ref twcapability);
+            if (sts != TWAIN.STS.SUCCESS)
+            {
+                // error
+                return;
             }
 
             // Send the command...
@@ -1083,10 +1124,11 @@ namespace TWAINCSScan
                 m_szProductDirectory = m_szProductDirectory.Replace(c, '_');
             }
 
-            // We're doing memory transfers...
+            // We're doing memory transfers... => Hitach스캐너에서는 native 전송으로 변경
             szStatus = "";
             twcapability = default(TWAIN.TW_CAPABILITY);
-            m_twain.CsvToCapability(ref twcapability, ref szStatus, "ICAP_XFERMECH,TWON_ONEVALUE,TWTY_UINT16,TWSX_MEMORY");
+            //m_twain.CsvToCapability(ref twcapability, ref szStatus, "ICAP_XFERMECH,TWON_ONEVALUE,TWTY_UINT16,TWSX_MEMORY");
+            m_twain.CsvToCapability(ref twcapability, ref szStatus, "ICAP_XFERMECH,TWON_ONEVALUE,TWTY_UINT16,TWSX_NATIVE");
             sts = m_twain.DatCapability(TWAIN.DG.CONTROL, TWAIN.MSG.SET, ref twcapability);
             if (sts != TWAIN.STS.SUCCESS)
             {
