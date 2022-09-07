@@ -874,12 +874,14 @@ namespace TWAINCSScan
                 m_ScanOpenMode = true;
             }
 
+            /*
             TWAIN.TW_NOUIPARAMFILE twnouiparamfile = default(TWAIN.TW_NOUIPARAMFILE);
             m_twain.CsvToNoUIParamFile(ref twnouiparamfile, "HT4139_setting");
             sts = m_twain.DatNoUIParamFile(TWAIN.DG.CONTROL, TWAIN.MSG.RESET, ref twnouiparamfile);
 
             ushort twdivscanctl = 1;
             sts = m_twain.DatTripletUint16(TWAIN.DG.CONTROL, TWAIN.DAT.DIVSCANCTL, TWAIN.MSG.SET, ref twdivscanctl);
+            */ 
 
             // We're doing memory transfers...  ==> Native transfer
             szStatus = "";
@@ -903,6 +905,13 @@ namespace TWAINCSScan
                 return;
             }
 
+            ushort twdivscanctl = 1;
+            sts = m_twain.DatTripletUint16(TWAIN.DG.CONTROL, TWAIN.DAT.DIVSCANCTL, TWAIN.MSG.SET, ref twdivscanctl);
+
+            TWAIN.TW_NOUIPARAMFILE twnouiparamfile = default(TWAIN.TW_NOUIPARAMFILE);
+            m_twain.CsvToNoUIParamFile(ref twnouiparamfile, "OMR(H)");
+            sts = m_twain.DatNoUIParamFile(TWAIN.DG.CONTROL, TWAIN.MSG.SET, ref twnouiparamfile);
+
             szStatus = "";
             twcapability = default(TWAIN.TW_CAPABILITY);
             m_twain.CsvToCapability(ref twcapability, ref szStatus, "CAP_AUTOFEED,TWON_ONEVALUE,TWTY_BOOL,TRUE");
@@ -913,6 +922,7 @@ namespace TWAINCSScan
                 return;
             }
 
+            /*
             szStatus = "";
             twcapability = default(TWAIN.TW_CAPABILITY);
             m_twain.CsvToCapability(ref twcapability, ref szStatus, "CAP_DUPLEXENABLED,TWON_ONEVALUE,TWTY_BOOL,FALSE");
@@ -922,6 +932,7 @@ namespace TWAINCSScan
                 // error
                 return;
             }
+            */
 
             // Send the command...
             ClearEvents();
